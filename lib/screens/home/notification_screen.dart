@@ -1,98 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:trabajo_fin_grado/services/firestore_services.dart';
 
-class NotificationScreen extends StatefulWidget {
+class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
-}
-
-class _NotificationScreenState extends State<NotificationScreen> {
-  final List<Map<String, dynamic>> _notifications = [
-    {
-      "titulo": "Recordatorio de cita",
-      "mensaje": "Tienes una cita pendiente el 25 de octubre a las 09:30.",
-      "fecha": DateTime(2025, 10, 18),
-    },
-    {
-      "titulo": "Promoción en productos",
-      "mensaje": "Aprovecha un 20% de descuento en cremas hidratantes.",
-      "fecha": DateTime(2025, 10, 15),
-    },
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F9FF),
-      appBar: AppBar(
-        title: const Text("Notificaciones"),
-        backgroundColor: const Color(0xFF0D6EFD),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: _notifications.isEmpty
-          ? const Center(
-              child: Text(
-                "No tienes notificaciones nuevas",
-                style: TextStyle(fontSize: 16, color: Colors.black54),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _notifications.length,
-              itemBuilder: (context, i) {
-                final notif = _notifications[i];
-                final fecha = DateFormat("d MMM yyyy", "es_ES")
-                    .format(notif["fecha"] as DateTime);
+    final user = FirebaseAuth.instance.currentUser;
 
-                return Card(
-                  elevation: 3,
-                  margin: const EdgeInsets.only(bottom: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0D6EFD),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.notifications_active_outlined,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    title: Text(
-                      notif["titulo"],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                        fontSize: 16,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        notif["mensaje"],
-                        style: const TextStyle(color: Colors.black54, height: 1.4),
-                      ),
-                    ),
-                    trailing: Text(
-                      fecha,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black38,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text('Inicia sesión para ver notificaciones')),
+      );
+    }
+
+    final fs = FirestoreService();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Notificaciones')),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: fs.notifications(user.uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data?.docs ?? [];
+
+          if (docs.isEmpty) {
+            return const Center(
+              child: Text('No tienes notificaciones nuevas'),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final notif = docs[index].data();
+              return ListTile(
+                title: Text(notif['titulo'] ?? 'Sin título'),
+                subtitle: Text(notif['mensaje'] ?? ''),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

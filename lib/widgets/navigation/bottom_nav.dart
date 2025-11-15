@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:trabajo_fin_grado/screens/home/appointments_screen.dart';
-import 'package:trabajo_fin_grado/screens/auth/login_screen.dart';
 import 'package:trabajo_fin_grado/screens/home/my_appointments_screen.dart';
 import 'package:trabajo_fin_grado/screens/home/notification_screen.dart';
 import 'package:trabajo_fin_grado/screens/home/profile_screen.dart';
+import 'package:trabajo_fin_grado/screens/auth/login_screen.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -15,58 +15,53 @@ class BottomNav extends StatefulWidget {
 
 class _BottomNavState extends State<BottomNav> {
   int _index = 0;
-  bool _isLoggedIn = false;
 
-  final List<Widget> _screens = const [
-    AppointmentsScreen(),               
-    MyAppointmentsScreen(),    
+  final _screens = const [
+    AppointmentsScreen(),
+    MyAppointmentsScreen(),
     NotificationScreen(),
     ProfileScreen(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSession();
-  }
-
-  Future<void> _loadSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() => _isLoggedIn = prefs.getBool('logged_in') ?? false);
-  }
-
-  Future<void> _onTabTapped(int newIndex) async {
-    if (!_isLoggedIn && newIndex != 0) {
-      final result = await Navigator.push(
-        context,
+  Future<void> _select(int i) async {
+    final logged = FirebaseAuth.instance.currentUser != null;
+    final requiresLogin = i != 0;
+    if (requiresLogin && !logged) {
+      final ok = await Navigator.of(context).push<bool>(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-      if (result == true) {
-        setState(() {
-          _isLoggedIn = true;
-          _index = newIndex;
-        });
+      if (ok == true) {
+        setState(() => _index = i);
       }
       return;
     }
-    setState(() => _index = newIndex);
+    setState(() => _index = i);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_index],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: _onTabTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF0D6EFD),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Citas'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Mis Citas'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notificaciones'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: _select,
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month),
+              label: 'Citas'),
+          NavigationDestination(
+              icon: Icon(Icons.assignment_outlined),
+              selectedIcon: Icon(Icons.assignment),
+              label: 'Mis Citas'),
+          NavigationDestination(
+              icon: Icon(Icons.notifications_none),
+              selectedIcon: Icon(Icons.notifications),
+              label: 'Notificaciones'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Perfil'),
         ],
       ),
     );

@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart'; // 👈 importante
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:trabajo_fin_grado/screens/home/notification_screen.dart';
+import 'package:trabajo_fin_grado/services/notification_services.dart';
+import 'package:trabajo_fin_grado/widgets/navigation/bottom_nav.dart';
 import 'package:trabajo_fin_grado/screens/auth/login_screen.dart';
 import 'package:trabajo_fin_grado/screens/auth/register_screen.dart';
 import 'package:trabajo_fin_grado/screens/home/appointments_screen.dart';
-import 'package:trabajo_fin_grado/widgets/navigation/bottom_nav.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('es_ES', null); // 👈 añade esto antes del runApp
-
+  await Firebase.initializeApp();
+  await initializeDateFormatting('es_ES', null);
+   await NotificationService.init();
   runApp(const PodologiaApp());
 }
 
@@ -17,24 +23,41 @@ class PodologiaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0D6EFD)),
+      scaffoldBackgroundColor: const Color(0xFFF5F9FF),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF0D6EFD),
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      textTheme: GoogleFonts.poppinsTextTheme(),
+    );
+
     return MaterialApp(
       title: 'Podología Profesional',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFFF5F9FF),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0D6EFD),
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-      ),
+      theme: base,
+
+      locale: const Locale('es', 'ES'),
+      supportedLocales: const [
+        Locale('es', 'ES'),
+        Locale('en', 'US'),
+      ],
+
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
       initialRoute: '/home',
       routes: {
-        '/appointments': (context) => const AppointmentsScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const BottomNav(),
+        '/home': (_) => const BottomNav(),
+        '/appointments': (_) => const AppointmentsScreen(),
+        '/login': (_) => const LoginScreen(),
+        '/register': (_) => const RegisterScreen(),
       },
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:trabajo_fin_grado/screens/home/market_screen.dart';
 import 'package:trabajo_fin_grado/screens/home/new_appointments_screen.dart';
 
@@ -14,52 +15,31 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _isLoggedIn = false;
 
-  final List<Map<String, dynamic>> _appointments = [
-    {
-      "nombre": "María García",
-      "descripcion": "Tratamiento de uñas encarnadas",
-      "hora": "09:00",
-      "doctor": "Dr. Juan Martínez",
-      "estado": "Confirmada",
-    },
-    {
-      "nombre": "Carlos López",
-      "descripcion": "Estudio biomecánico",
-      "hora": "10:30",
-      "doctor": "Dra. Ana Rodríguez",
-      "estado": "Confirmada",
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      setState(() => _isLoggedIn = user != null);
+    });
+  }
 
   void _abrirNuevaCita() async {
-    if (!_isLoggedIn) {
-      final result = await Navigator.pushNamed(context, '/login');
-      if (result == true) {
-        setState(() => _isLoggedIn = true);
-      } else {
-        return;
-      }
+    if (FirebaseAuth.instance.currentUser == null) {
+      await Navigator.pushNamed(context, '/login');
+      if (FirebaseAuth.instance.currentUser == null) return;
     }
 
-    final nuevaCita = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const NewAppointmentScreen()),
     );
-
-    if (nuevaCita != null) {
-      setState(() {
-        _appointments.add(nuevaCita);
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final citasHoy = _appointments;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Citas disponibles"),
+        title: const Text("Citas"),
         actions: [
           TextButton.icon(
             onPressed: () {
@@ -69,7 +49,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               );
             },
             icon: const Icon(Icons.storefront, color: Colors.white),
-            label: const Text("Tienda", style: TextStyle(color: Colors.white)),
+            label: const Text(
+              "Tienda",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -79,7 +62,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Consulta nuestro calendario",
+              "Consulta el calendario",
               style: TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 8),
@@ -103,21 +86,22 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 onDateChanged: (date) => setState(() => _selectedDate = date),
               ),
             ),
+
             const SizedBox(height: 16),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  DateFormat(
-                    "EEEE, d 'de' MMMM",
-                    "es_ES",
-                  ).format(_selectedDate).toUpperCase(),
+                  DateFormat("EEEE, d 'de' MMMM", "es_ES")
+                      .format(_selectedDate)
+                      .toUpperCase(),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
+
                 ElevatedButton.icon(
                   onPressed: _abrirNuevaCita,
                   icon: const Icon(Icons.add),
@@ -128,8 +112,21 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 12),
-            
+
+            Expanded(
+              child: Center(
+                child: Text(
+                  "Selecciona una fecha y pulsa \"Nueva cita\"",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 15,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
           ],
         ),
       ),

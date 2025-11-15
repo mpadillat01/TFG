@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "409627415295",
+    "project_id": "podologia-68aa4",
+    "storage_bucket": "podologia-68aa4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409627415295:android:7426706f63908816ba72ca",
+        "android_client_info": {
+          "package_name": "com.example.trabajo_fin_grado"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcvMWEhubassrS-meDGWc_fi_75E7yjj0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
