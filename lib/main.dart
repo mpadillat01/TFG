@@ -1,22 +1,27 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:trabajo_fin_grado/screens/home/notification_screen.dart';
-import 'package:trabajo_fin_grado/services/notification_services.dart';
-import 'package:trabajo_fin_grado/widgets/navigation/bottom_nav.dart';
-import 'package:trabajo_fin_grado/screens/auth/login_screen.dart';
-import 'package:trabajo_fin_grado/screens/auth/register_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/appointments_screen.dart';
+
+import 'firebase_option.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/home/appointments_screen.dart';
+import 'widgets/navigation/bottom_nav.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   await initializeDateFormatting('es_ES', null);
-   await NotificationService.init();
+
   runApp(const PodologiaApp());
 }
+
 
 class PodologiaApp extends StatelessWidget {
   const PodologiaApp({super.key});
@@ -39,19 +44,16 @@ class PodologiaApp extends StatelessWidget {
       title: 'Podología Profesional',
       debugShowCheckedModeBanner: false,
       theme: base,
-
       locale: const Locale('es', 'ES'),
       supportedLocales: const [
         Locale('es', 'ES'),
         Locale('en', 'US'),
       ],
-
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
       initialRoute: '/home',
       routes: {
         '/home': (_) => const BottomNav(),

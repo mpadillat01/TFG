@@ -55,4 +55,15 @@ class FirestoreService {
         .orderBy('date', descending: true)
         .snapshots();
   }
+
+Stream<QuerySnapshot<Map<String, dynamic>>> appointmentsByDate({
+  required String userId,
+}) {
+  return _db
+      .collection('citas')
+      .where('userId', isEqualTo: userId)
+      .snapshots();
+}
+
+
 }
