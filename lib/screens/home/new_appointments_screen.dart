@@ -4,10 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:trabajo_fin_grado/data/model/doctor_responsive.dart';
+import 'package:trabajo_fin_grado/services/doctor_services.dart';
+import 'package:trabajo_fin_grado/services/firestore_service.dart';
 
-import '../../data/model/doctor_responsive.dart';
-import '../../services/doctor_services.dart';
-import '../../services/firestore_services.dart';
 
 class NewAppointmentScreen extends StatefulWidget {
   const NewAppointmentScreen({super.key});

@@ -71,7 +71,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // 🔵 Fondo degradado
           AnimatedContainer(
             duration: const Duration(seconds: 2),
             decoration: BoxDecoration(
@@ -87,7 +86,6 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
           ),
 
-          // 🔵 Glow superior
           Positioned(
             top: -80,
             left: -30,
@@ -106,7 +104,6 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
           ),
 
-          // 🟣 Glow inferior
           Positioned(
             bottom: -90,
             right: -30,
@@ -125,7 +122,6 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
           ),
 
-          // 🔙 BOTÓN ATRÁS
           Positioned(
             top: 12,
             left: 12,
@@ -218,7 +214,6 @@ class _RegisterScreenState extends State<RegisterScreen>
 
                               const SizedBox(height: 30),
 
-                              // 🟦 BOTÓN REGISTRAR
                               SizedBox(
                                 width: double.infinity,
                                 child: GestureDetector(
@@ -277,7 +272,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  // ⭐ INPUT PREMIUM MATCH CON LOGIN
   Widget _buildInput({
     required TextEditingController controller,
     required String hint,

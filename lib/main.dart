@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'firebase_option.dart';
+import 'screens/admin/admin_home_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/appointments_screen.dart';
@@ -13,15 +14,12 @@ import 'widgets/navigation/bottom_nav.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await initializeDateFormatting('es_ES', null);
 
   runApp(const PodologiaApp());
 }
-
 
 class PodologiaApp extends StatelessWidget {
   const PodologiaApp({super.key});
@@ -45,21 +43,21 @@ class PodologiaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: base,
       locale: const Locale('es', 'ES'),
-      supportedLocales: const [
-        Locale('es', 'ES'),
-        Locale('en', 'US'),
-      ],
+      supportedLocales: const [Locale('es', 'ES'), Locale('en', 'US')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      initialRoute: '/home',
+
+      home: const BottomNav(),
+
       routes: {
-        '/home': (_) => const BottomNav(),
         '/appointments': (_) => const AppointmentsScreen(),
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
+        '/adminHome': (_) => const AdminHomeScreen(),
+        '/clienteHome': (_) => const BottomNav(),
       },
     );
   }

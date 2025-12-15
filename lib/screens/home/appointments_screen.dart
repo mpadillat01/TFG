@@ -4,10 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:trabajo_fin_grado/screens/home/market_screen.dart';
+import 'package:trabajo_fin_grado/screens/auth/login_screen.dart';
 import 'package:trabajo_fin_grado/screens/home/new_appointments_screen.dart';
 
-import '../../services/firestore_services.dart';
+import '../../services/firestore_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -21,9 +21,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   final fs = FirestoreService();
 
   Future<void> _abrirNuevaCita() async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      await Navigator.pushNamed(context, '/login');
-      if (FirebaseAuth.instance.currentUser == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (ok != true) return;
     }
 
     final ok = await Navigator.push(
@@ -36,225 +40,238 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final fecha = DateFormat("EEEE, d 'de' MMMM", "es_ES")
-        .format(_selectedDate)
-        .toUpperCase();
+    final fecha = DateFormat("EEEE, d 'de' MMMM", "es_ES").format(_selectedDate);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
+      backgroundColor: const Color(0xFF0A4FF5),
 
       appBar: AppBar(
-        title: const Text("Citas", style: TextStyle(color: Colors.white)),
+        
+        automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MarketScreen()),
-                );
-              },
-              icon: const Icon(Icons.storefront, size: 20, color: Color(0xFF0D6EFD)),
-              label: const Text("Tienda",
-                  style: TextStyle(color: Color(0xFF0D6EFD))),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                elevation: 1,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          )
-        ],
+        title: const Text(
+          "Mis Citas",
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
       ),
 
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0D6EFD), Color(0xFF4EA8FF)],
+            colors: [Color(0xFF0A4FF5), Color(0xFF50A9FF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 10),
+
+                const SizedBox(height: 15),
 
                 Text(
-                  "Consulta el calendario",
+                  "Calendario de consultas",
                   style: TextStyle(
-                    color: Colors.white.withOpacity(.85),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withOpacity(.97),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 18),
 
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.25),
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(.3),
-                        ),
-                      ),
-                      child: CalendarDatePicker(
-                        initialDate: _selectedDate,
-                        firstDate: DateTime(2024),
-                        lastDate: DateTime(2026),
-                        onDateChanged: (date) {
-                          setState(() => _selectedDate = date);
-                        },
-                      ),
-                    ),
-                  ),
-                ),
+                _buildModernCalendar(),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 28),
 
                 Row(
                   children: [
                     Expanded(
                       child: Text(
-                        fecha,
+                        fecha.toUpperCase(),
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
                           color: Colors.white,
+                          letterSpacing: .7,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
+
+                    ElevatedButton.icon(
                       onPressed: _abrirNuevaCita,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 12),
                         backgroundColor: Colors.white,
-                        foregroundColor: Color(0xFF0D6EFD),
-                        elevation: 4,
+                        foregroundColor: const Color(0xFF0A4FF5),
+                        elevation: 6,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                         ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12),
                       ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.add, size: 20),
-                          SizedBox(width: 6),
-                          Text("Nueva cita",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              )),
-                        ],
+                      icon: const Icon(Icons.add, size: 22),
+                      label: const Text(
+                        "Nueva cita",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 20),
-
-                Expanded(
-                  child: user == null
-                      ? const Center(
-                          child: Text(
-                            "Inicia sesión para ver tus citas",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        )
-                      : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                          stream: fs.appointmentsByDate(userId: user.uid),
-                          builder: (context, snap) {
-                            if (!snap.hasData) {
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                              );
-                            }
-
-                            // 🔥 FILTRAR AQUÍ POR FECHA (no en Firestore)
-                            final citas = snap.data!.docs.where((d) {
-                              final ts = d['date'] as Timestamp;
-                              final fecha = ts.toDate();
-                              return fecha.year == _selectedDate.year &&
-                                  fecha.month == _selectedDate.month &&
-                                  fecha.day == _selectedDate.day;
-                            }).toList();
-
-                            if (citas.isEmpty) {
-                              return Center(
-                                child: Text(
-                                  "No hay citas este día",
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(.85),
-                                    fontSize: 16,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              );
-                            }
-
-                            return ListView.builder(
-                              itemCount: citas.length,
-                              itemBuilder: (_, i) {
-                                final c = citas[i].data();
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(.25),
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(.35),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "${c['doctorName']} • ${c['timeText']}",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        c["motivo"] ?? "",
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(.85),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                ),
+                Expanded(child: _buildListaCitas()),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernCalendar() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Colors.white.withOpacity(.15),
+            border: Border.all(color: Colors.white.withOpacity(.35)),
+          ),
+          child: CalendarDatePicker(
+            initialDate: _selectedDate,
+            firstDate: DateTime(2023),
+            lastDate: DateTime(2026),
+            onDateChanged: (d) => setState(() => _selectedDate = d),
+            selectableDayPredicate: (_) => true,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListaCitas() {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snap) {
+        final user = snap.data;
+        final stream = user == null 
+            ? fs.appointmentsAll() 
+            : fs.appointmentsByDate(userId: user.uid);
+
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: stream,
+          builder: (_, s) {
+            if (s.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Colors.white));
+            }
+
+            if (!s.hasData) {
+              return const Center(child: Text("No se pudieron cargar las citas"));
+            }
+
+            final citas = s.data!.docs.where((d) {
+              final fecha = (d['date'] as Timestamp).toDate();
+              return fecha.year == _selectedDate.year &&
+                     fecha.month == _selectedDate.month &&
+                     fecha.day == _selectedDate.day;
+            }).toList();
+
+            if (citas.isEmpty) {
+              return Center(
+                child: Text(
+                  "No hay citas este día",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(.95),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.only(top: 6, bottom: 16),
+              itemCount: citas.length,
+              itemBuilder: (_, i) => _buildCita(citas[i].data()),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // -------------------------------------------------------
+  //       TARJETA GLASSMORPHISM DE CADA CITA
+  // -------------------------------------------------------
+  Widget _buildCita(Map<String, dynamic> c) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(.22),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withOpacity(.35)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(.20),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              )
+            ],
+          ),
+          child: Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: Colors.white,
+                radius: 25,
+                child: Icon(Icons.medical_services_rounded,
+                    color: Color(0xFF0A4FF5), size: 30),
+              ),
+              const SizedBox(width: 16),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${c['doctorName']} • ${c['timeText']}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      c["motivo"] ?? "",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(.90),
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

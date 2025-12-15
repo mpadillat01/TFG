@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:trabajo_fin_grado/services/auth_services.dart';
+import 'package:trabajo_fin_grado/widgets/navigation/bottom_nav.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,16 +41,32 @@ class _LoginScreenState extends State<LoginScreen>
     _controller.forward();
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    email.dispose();
+    pass.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
     setState(() => loading = true);
     try {
       await auth.signIn(email.text.trim(), pass.text);
+
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+
+      if (email.text.trim() == 'admin@admin.com' && pass.text == '123456') {
+        Navigator.of(context).pushReplacementNamed('/adminHome');
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const BottomNav()),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error al iniciar sesión: $e"),
+          content: Text("Error al iniciar sesión: ${e.toString()}"),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -65,9 +82,8 @@ class _LoginScreenState extends State<LoginScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // 🌈 Degradado animado elegante
           AnimatedContainer(
-            duration: const Duration(seconds: 2),
+            duration: const Duration(milliseconds: 1500),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: dark
@@ -87,7 +103,6 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
 
-          // 🔵 Glow lateral tipo premium
           Positioned(
             top: -80,
             left: -40,
@@ -124,32 +139,34 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
 
-          // 🔙 BOTÓN VOLVER
-          Positioned(
-            top: 12,
-            left: 12,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 15,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white,
-                  size: 22,
+          if (Navigator.of(context).canPop()) 
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 12,
+              left: 12,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                onPressed: () => Navigator.of(context).pop(),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
               ),
             ),
-          ),
 
           SafeArea(
             child: Center(
@@ -157,7 +174,6 @@ class _LoginScreenState extends State<LoginScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 26),
                 child: Column(
                   children: [
-                    // 🔥 LOGO -> efecto breathing + glow
                     ScaleTransition(
                       scale: _scale,
                       child: FadeTransition(
@@ -175,8 +191,11 @@ class _LoginScreenState extends State<LoginScreen>
                             ],
                           ),
                           child: Image.asset(
-                            "assets/images/logo.png",
+                            "assets/images/logo.png", 
                             height: 120,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.fitness_center, size: 120, color: Colors.blueAccent);
+                            },
                           ),
                         ),
                       ),
@@ -184,7 +203,6 @@ class _LoginScreenState extends State<LoginScreen>
 
                     const SizedBox(height: 40),
 
-                    // 🧊 TARJETA GLASS PREMIUM
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: BackdropFilter(
@@ -218,28 +236,27 @@ class _LoginScreenState extends State<LoginScreen>
 
                               const SizedBox(height: 25),
 
-                              // ✉️ EMAIL
                               _buildInput(
                                 controller: email,
                                 hint: "Email",
                                 icon: Icons.email_rounded,
                                 dark: dark,
+                                keyboardType: TextInputType.emailAddress,
                               ),
 
                               const SizedBox(height: 18),
 
-                              // 🔒 CONTRASEÑA
                               _buildInput(
                                 controller: pass,
                                 hint: "Contraseña",
                                 icon: Icons.lock_rounded,
                                 obscure: true,
                                 dark: dark,
+                                keyboardType: TextInputType.text,
                               ),
 
                               const SizedBox(height: 30),
 
-                              // 🟦 BOTÓN CON GLOW
                               SizedBox(
                                 width: double.infinity,
                                 child: GestureDetector(
@@ -269,14 +286,23 @@ class _LoginScreenState extends State<LoginScreen>
                                       ],
                                     ),
                                     child: Center(
-                                      child: Text(
-                                        loading ? "Entrando..." : "Entrar",
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
+                                      child: loading
+                                          ? const SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 3,
+                                              ),
+                                            )
+                                          : const Text(
+                                              "Entrar",
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                            ),
                                     ),
                                   ),
                                 ),
@@ -284,7 +310,6 @@ class _LoginScreenState extends State<LoginScreen>
 
                               const SizedBox(height: 15),
 
-                              // Registrar
                               TextButton(
                                 onPressed: () => Navigator.of(
                                   context,
@@ -313,17 +338,18 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ⭐ Input con diseño moderno y color mejorado
   Widget _buildInput({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     required bool dark,
+    TextInputType keyboardType = TextInputType.text,
     bool obscure = false,
   }) {
     return TextField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: keyboardType,
       style: TextStyle(color: Colors.black.withOpacity(0.85), fontSize: 16),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.black.withOpacity(0.65), size: 22),

@@ -1,10 +1,24 @@
+import 'package:async/async.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:trabajo_fin_grado/services/firestore_services.dart';
+import 'package:trabajo_fin_grado/screens/home/notification_card.dart';
+import 'package:trabajo_fin_grado/services/notification_services.dart'; 
+
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
+
+  Future<void> _deleteNotification(String docId, String type) async {
+    final collectionPath = type == 'recordatorio' ? 'notificaciones' : 'mensajes';
+    
+    if (type == 'admin') {
+      await FirebaseFirestore.instance.collection('mensajes').doc(docId).delete();
+      return;
+    }
+
+    await FirebaseFirestore.instance.collection(collectionPath).doc(docId).delete();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,29 +26,48 @@ class NotificationScreen extends StatelessWidget {
 
     if (user == null) {
       return const Scaffold(
+        backgroundColor: Colors.black, 
         body: Center(
           child: Text(
             'Inicia sesión para ver notificaciones',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 18, 
+              fontWeight: FontWeight.w600,
+              color: Colors.white, 
+            ),
           ),
         ),
       );
     }
 
-    final fs = FirestoreService();
+    final notificationsStream = FirebaseFirestore.instance
+        .collection('notificaciones')
+        .where('clienteId', isEqualTo: user.uid)
+        .snapshots();
+
+    final adminMessagesStream = FirebaseFirestore.instance
+        .collection('mensajes')
+        .where('clienteId', isEqualTo: user.uid)
+        .snapshots();
+
+    final combinedStream = StreamZip([
+      notificationsStream,
+      adminMessagesStream,
+    ]).map((lists) => [
+          ...lists[0].docs, 
+          ...lists[1].docs
+        ]);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text("Notificaciones"),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.transparent, 
         elevation: 0,
         centerTitle: true,
       ),
-
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF0D6EFD), Color(0xFF4EA8FF)],
@@ -42,32 +75,75 @@ class NotificationScreen extends StatelessWidget {
             end: Alignment.bottomCenter,
           ),
         ),
-
         child: SafeArea(
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: fs.notifications(user.uid),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
+          child: StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+            stream: combinedStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
+                    child: CircularProgressIndicator(color: Colors.white));
               }
 
-              final docs = snap.data?.docs ?? [];
+              final docs = snapshot.data ?? [];
 
-              if (docs.isEmpty) return const _Empty();
+              if (docs.isEmpty) return const EmptyState();
+
+              for (var d in docs) {
+                final data = d.data();
+                final fecha = (data['fecha_envio'] ?? data['fecha']) as Timestamp?;
+                
+                if (fecha != null) {
+                  NotificationService.scheduleAppointmentReminder(
+                    appointmentDate: fecha.toDate(),
+                    doctor: data['doctor'] ?? 'Tu médico',
+                  );
+                }
+              }
 
               return ListView.builder(
                 padding: const EdgeInsets.all(18),
                 itemCount: docs.length,
                 itemBuilder: (_, i) {
-                  final n = docs[i].data();
+                  final d = docs[i];
+                  final n = d.data();
+                  final docId = d.id; 
+                  final tipo = n['tipo'] ?? 'admin'; 
+                  final fecha = (n['fecha_envio'] ?? n['fecha']) as Timestamp?;
 
-                  return _NotificationCard(
-                    title: n["titulo"] ?? "Notificación",
-                    message: n["mensaje"] ?? "",
-                    type: n["tipo"] ?? "general",
-                    date: (n["fecha_envio"] as Timestamp?)?.toDate(), // ✅ CAMBIO CRÍTICO
+                  return Dismissible(
+                    key: Key(docId), 
+                    direction: DismissDirection.endToStart, 
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20.0),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.shade700,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                    ),
+                    confirmDismiss: (direction) async {
+                      return true; 
+                    },
+                    onDismissed: (direction) {
+                      _deleteNotification(docId, tipo);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Notificación eliminada permanentemente."),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    },
+                    child: NotificationCard(
+                      title: n['titulo'] ??
+                          (tipo == 'recordatorio'
+                                  ? 'Recordatorio de cita'
+                                  : 'Mensaje del admin'),
+                      message: n['mensaje'] ?? '',
+                      type: tipo,
+                      date: fecha?.toDate(),
+                    ),
                   );
                 },
               );
@@ -79,117 +155,8 @@ class NotificationScreen extends StatelessWidget {
   }
 }
 
-class _NotificationCard extends StatelessWidget {
-  final String title;
-  final String message;
-  final String type;
-  final DateTime? date;
-
-  const _NotificationCard({
-    required this.title,
-    required this.message,
-    required this.type,
-    this.date,
-  });
-
-  IconData _getIcon() {
-    switch (type) {
-      case "cita":
-        return Icons.event_available;
-      case "recordatorio":
-        return Icons.notifications_active;
-      case "admin":
-        return Icons.verified_user_rounded;
-      default:
-        return Icons.notifications;
-    }
-  }
-
-  Color _getColor() {
-    switch (type) {
-      case "cita":
-        return Colors.greenAccent.shade400;
-      case "recordatorio":
-        return Colors.yellowAccent.shade400;
-      case "admin":
-        return Colors.redAccent.shade400;
-      default:
-        return Colors.white;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _getColor();
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(.18),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(.35)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(.25),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(_getIcon(), color: color, size: 28),
-          ),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(.85),
-                    fontSize: 14,
-                  ),
-                ),
-
-                if (date != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    "${date!.day}/${date!.month}/${date!.year} "
-                    "• ${date!.hour.toString().padLeft(2, '0')}:"
-                    "${date!.minute.toString().padLeft(2, '0')}",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(.65),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Empty extends StatelessWidget {
-  const _Empty();
+class EmptyState extends StatelessWidget {
+  const EmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +177,7 @@ class _Empty extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            "Aquí aparecerán avisos sobre citas,\nrecordatorios y mensajes.",
+            "Aquí aparecerán avisos sobre tus citas y mensajes importantes del admin.",
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withOpacity(.85),

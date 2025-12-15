@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:trabajo_fin_grado/services/firestore_service.dart';
 
-class MyAppointmentsScreen extends StatelessWidget {
-  const MyAppointmentsScreen({super.key});
+class HistorialCitasScreen extends StatelessWidget {
+  const HistorialCitasScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,12 +15,8 @@ class MyAppointmentsScreen extends StatelessWidget {
     final now = DateTime.now();
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text("Mis Citas"),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text("Historial de citas"),
         centerTitle: true,
       ),
       body: Container(
@@ -44,16 +40,16 @@ class MyAppointmentsScreen extends StatelessWidget {
               final docs = snap.data!.docs
                   .where((d) {
                     final fecha = (d['date'] as Timestamp?)?.toDate();
-                    return fecha != null && fecha.isAfter(now);
+                    return fecha != null && fecha.isBefore(now);
                   })
                   .toList();
 
-              if (docs.isEmpty) return const _Empty(texto: "No tienes próximas citas");
+              if (docs.isEmpty) return const _Empty(texto: "No tienes citas pasadas");
 
               docs.sort((a, b) {
                 final da = (a['date'] as Timestamp?)?.toDate() ?? now;
                 final db = (b['date'] as Timestamp?)?.toDate() ?? now;
-                return da.compareTo(db);
+                return db.compareTo(da);
               });
 
               return ListView.builder(

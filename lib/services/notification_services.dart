@@ -7,11 +7,10 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
-  /// Inicialización segura según plataforma
   static Future<void> init() async {
     if (kIsWeb) {
       print("🔕 Notificaciones deshabilitadas en Web");
-      return; // ❌ IMPORTANTE: NO intentar inicializar en Web
+      return;
     }
 
     tz.initializeTimeZones();
@@ -27,12 +26,11 @@ class NotificationService {
     print("📡 Notificaciones inicializadas correctamente");
   }
 
-  /// Programar recordatorio (solo Android/iOS)
   static Future<void> scheduleAppointmentReminder({
     required DateTime appointmentDate,
     required String doctor,
   }) async {
-    if (kIsWeb) return; // ❌ Ignorar en Web para evitar errores
+    if (kIsWeb) return; 
 
     final tzDate = tz.TZDateTime.from(appointmentDate, tz.local);
     final reminderTime = tzDate.subtract(const Duration(hours: 1));
@@ -57,4 +55,5 @@ class NotificationService {
       );
     }
   }
+  
 }
