@@ -4,11 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:trabajo_fin_grado/screens/auth/login_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/appointments_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/market_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/my_appointments_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/notification_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/profile_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/appointments_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/market_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/my_appointments_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/notification_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/profile_screen.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});

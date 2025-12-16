@@ -2,7 +2,7 @@ import 'package:async/async.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:trabajo_fin_grado/screens/home/notification_card.dart';
+import 'package:trabajo_fin_grado/screens/home/card/notification_card.dart';
 import 'package:trabajo_fin_grado/services/notification_services.dart'; 
 
 

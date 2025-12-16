@@ -8,7 +8,7 @@ import 'firebase_option.dart';
 import 'screens/admin/admin_home_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
-import 'screens/home/appointments_screen.dart';
+import 'screens/home/screen/appointments_screen.dart';
 import 'widgets/navigation/bottom_nav.dart';
 
 Future<void> main() async {

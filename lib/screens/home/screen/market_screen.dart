@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:trabajo_fin_grado/screens/home/product_card.dart';
+import 'package:trabajo_fin_grado/screens/home/card/product_card.dart';
 import 'package:trabajo_fin_grado/widgets/widget_pantallas/cart_widget.dart';
 
 class MarketScreen extends StatefulWidget {

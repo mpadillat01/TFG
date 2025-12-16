@@ -8,7 +8,6 @@ import 'package:trabajo_fin_grado/data/model/doctor_responsive.dart';
 import 'package:trabajo_fin_grado/services/doctor_services.dart';
 import 'package:trabajo_fin_grado/services/firestore_service.dart';
 
-
 class NewAppointmentScreen extends StatefulWidget {
   const NewAppointmentScreen({super.key});
 
@@ -18,7 +17,6 @@ class NewAppointmentScreen extends StatefulWidget {
 
 class _NewAppointmentScreenState extends State<NewAppointmentScreen>
     with SingleTickerProviderStateMixin {
-
   final _motivo = TextEditingController();
   final fs = FirestoreService();
 
@@ -37,7 +35,10 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
   @override
   void initState() {
     super.initState();
-    _fade = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _fade = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
     _loadDoctors();
   }
 
@@ -60,10 +61,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
     if (_doctor == null || _date == null) return;
     setState(() => _loadingHours = true);
 
-    _busyHours = await fs.getBusyHours(
-      doctorId: _doctor!.id,
-      date: _date!,
-    );
+    _busyHours = await fs.getBusyHours(doctorId: _doctor!.id, date: _date!);
 
     setState(() => _loadingHours = false);
   }
@@ -89,7 +87,10 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                 backgroundColor: Colors.transparent,
                 title: const Text(
                   "Selecciona una fecha",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 content: CalendarDatePicker(
                   initialDate: temp,
@@ -105,7 +106,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                   ElevatedButton(
                     child: const Text("Aceptar"),
                     onPressed: () => Navigator.pop(context, temp),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -143,36 +144,168 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
     }
 
     final now = DateTime.now();
-    final isToday = _date!.difference(DateTime(now.year, now.month, now.day)).inDays == 0;
+    final isToday =
+        _date!.difference(DateTime(now.year, now.month, now.day)).inDays == 0;
 
-    final initial = isToday
-        ? TimeOfDay(hour: now.hour, minute: now.minute)
-        : const TimeOfDay(hour: 9, minute: 0);
+    final timesMorning = <TimeOfDay>[];
+    final timesAfternoon = <TimeOfDay>[];
 
-    final t = await showTimePicker(context: context, initialTime: initial);
-    if (t == null) return;
+    void addRange(
+      int hStart,
+      int mStart,
+      int hEnd,
+      int mEnd,
+      List<TimeOfDay> list,
+    ) {
+      var t = DateTime(0, 0, 0, hStart, mStart);
+      final end = DateTime(0, 0, 0, hEnd, mEnd);
 
-    final hourText = t.format(context);
-
-    if (_busyHours.contains(hourText)) {
-      return _msg("Hora no disponible: $hourText");
-    }
-
-    if (isToday) {
-      final selected = DateTime(now.year, now.month, now.day, t.hour, t.minute);
-      if (selected.isBefore(now)) {
-        return _msg("No puedes elegir una hora pasada");
+      while (!t.isAfter(end)) {
+        list.add(TimeOfDay(hour: t.hour, minute: t.minute));
+        t = t.add(const Duration(minutes: 30));
       }
     }
 
-    setState(() => _time = t);
+    addRange(9, 0, 14, 0, timesMorning);
+    addRange(16, 0, 21, 30, timesAfternoon);
+
+    final selected = await showModalBottomSheet<TimeOfDay>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        Widget buildGrid(List<TimeOfDay> times) {
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: times.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 2.6,
+            ),
+            itemBuilder: (_, i) {
+              final t = times[i];
+              final text = t.format(context);
+
+              final isPast =
+                  isToday &&
+                  DateTime(
+                    now.year,
+                    now.month,
+                    now.day,
+                    t.hour,
+                    t.minute,
+                  ).isBefore(now);
+
+              final isBusy = _busyHours.contains(text);
+              final disabled = isPast || isBusy;
+
+              return AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: disabled ? 0.45 : 1,
+                child: ElevatedButton(
+                  onPressed: disabled ? null : () => Navigator.pop(context, t),
+                  style: ElevatedButton.styleFrom(
+                    elevation: 3,
+                    backgroundColor: disabled
+                        ? Colors.grey.shade300
+                        : Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }
+
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(.95),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(26),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                const Text(
+                  "Selecciona una hora",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+
+                const SizedBox(height: 14),
+
+                const Text(
+                  "Mañana",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                buildGrid(timesMorning),
+
+                const SizedBox(height: 18),
+
+                const Text(
+                  "Tarde",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                buildGrid(timesAfternoon),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      setState(() => _time = selected);
+    }
   }
 
   Future<void> _save() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (_date == null || _time == null || _doctor == null || _motivo.text.isEmpty) {
+    if (_date == null ||
+        _time == null ||
+        _doctor == null ||
+        _motivo.text.isEmpty) {
       return _msg("Completa todos los campos");
     }
 
@@ -237,7 +370,6 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         children: [
-
                           _GlassTile(
                             label: dateLabel,
                             icon: Icons.calendar_today,
@@ -247,7 +379,9 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                           const SizedBox(height: 16),
 
                           _GlassTile(
-                            label: _time == null ? "Seleccionar hora" : _time!.format(context),
+                            label: _time == null
+                                ? "Seleccionar hora"
+                                : _time!.format(context),
                             icon: Icons.access_time,
                             onTap: _pickTime,
                           ),
@@ -256,17 +390,21 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
 
                           _glassCard(
                             child: _loadingDoctors
-                                ? const Center(child: CircularProgressIndicator())
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
                                 : DropdownButtonFormField<Doctor>(
                                     dropdownColor: Colors.white,
                                     value: _doctor,
                                     decoration: _input("Selecciona un doctor"),
-                                    items: _doctores.map(
-                                      (e) => DropdownMenuItem(
-                                        value: e,
-                                        child: Text(e.fullName),
-                                      ),
-                                    ).toList(),
+                                    items: _doctores
+                                        .map(
+                                          (e) => DropdownMenuItem(
+                                            value: e,
+                                            child: Text(e.fullName),
+                                          ),
+                                        )
+                                        .toList(),
                                     onChanged: (v) async {
                                       setState(() => _doctor = v);
                                       await _loadBusyHours();
@@ -290,7 +428,9 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.blue.shade700,
                                 shape: RoundedRectangleBorder(
@@ -308,7 +448,6 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                               ),
                             ),
                           ),
-
                         ],
                       ),
                     ),
@@ -335,14 +474,12 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
   }
 
   InputDecoration _input(String t) => InputDecoration(
-        labelText: t,
-        labelStyle: const TextStyle(color: Colors.black87),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-      );
+    labelText: t,
+    labelStyle: const TextStyle(color: Colors.black87),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+    filled: true,
+    fillColor: Colors.white,
+  );
 }
 
 class _GlassTile extends StatelessWidget {

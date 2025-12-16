@@ -16,146 +16,186 @@ class _AdminMensajesScreenState extends State<AdminMensajesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFFF4F6FA),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Text(
-                "Enviar Mensaje",
-                style: GoogleFonts.poppins(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade700,
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0D6EFD), Color(0xFF3D8BFD)],
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
                 ),
               ),
-              const SizedBox(height: 24),
+              child: Row(
+                children: [
+                  const Icon(Icons.forum_rounded,
+                      color: Colors.white, size: 26),
+                  const SizedBox(width: 10),
+                  Text(
+                    "Mensajes",
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('users').snapshots(),
+            const SizedBox(height: 18),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: StreamBuilder<QuerySnapshot>(
+                stream:
+                    FirebaseFirestore.instance.collection('users').snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const LinearProgressIndicator();
                   }
+
                   final usuarios = snapshot.data!.docs;
 
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.white, Colors.grey.shade50],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
                       ],
                     ),
                     child: DropdownButtonFormField<String>(
                       value: _clienteSeleccionado,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
-                        hintText: "Selecciona un usuario",
+                        hintText: "Selecciona un paciente",
+                        hintStyle: GoogleFonts.poppins(fontSize: 14),
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
                       items: usuarios
-                          .map((u) => DropdownMenuItem(
-                                value: u.id,
-                                child: Text(
-                                  u['displayName'] ?? u['email'],
-                                  style: GoogleFonts.poppins(),
-                                ),
-                              ))
+                          .map(
+                            (u) => DropdownMenuItem(
+                              value: u.id,
+                              child: Text(
+                                u['displayName'] ?? u['email'],
+                                style: GoogleFonts.poppins(fontSize: 14),
+                              ),
+                            ),
+                          )
                           .toList(),
-                      onChanged: (val) => setState(() => _clienteSeleccionado = val),
+                      onChanged: (v) =>
+                          setState(() => _clienteSeleccionado = v),
                     ),
                   );
                 },
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                height: 140,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border(
+                    left: BorderSide(
+                      color: Colors.blue.shade600,
+                      width: 4,
+                    ),
                   ),
-                  child: TextField(
-                    controller: _mensajeController,
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: "Escribe tu mensaje aquí...",
-                      hintStyle: GoogleFonts.poppins(
-                        color: Colors.grey.shade400,
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
                     ),
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
+                  ],
+                ),
+                child: TextField(
+                  controller: _mensajeController,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: "Escribe un mensaje breve…",
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: Colors.grey.shade400,
                     ),
+                  ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    height: 1.4,
                   ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const Spacer(),
 
-              SizedBox(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+              child: SizedBox(
                 width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    elevation: 5,
-                    shadowColor: Colors.black.withOpacity(0.3),
-                    backgroundColor: const Color(0xFF0D6EFD),
-                  ),
+                height: 50,
+                child: ElevatedButton.icon(
                   onPressed: () {
-                    if (_clienteSeleccionado != null && _mensajeController.text.isNotEmpty) {
-                      FirebaseFirestore.instance.collection('mensajes').add({
+                    if (_clienteSeleccionado != null &&
+                        _mensajeController.text.isNotEmpty) {
+                      FirebaseFirestore.instance
+                          .collection('mensajes')
+                          .add({
                         'clienteId': _clienteSeleccionado,
                         'mensaje': _mensajeController.text,
                         'fecha': DateTime.now(),
                       }).then((_) {
                         _mensajeController.clear();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Mensaje enviado")),
+                          const SnackBar(
+                            content: Text("Mensaje enviado"),
+                          ),
                         );
                       });
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Selecciona un usuario y escribe un mensaje")),
-                      );
                     }
                   },
-                  child: Text(
-                    "Enviar",
+                  icon: const Icon(Icons.send_rounded, size: 20),
+                  label: Text(
+                    "Enviar mensaje",
                     style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D6EFD),
+                    elevation: 8,
+                    shadowColor: Colors.blueAccent.withOpacity(0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trabajo_fin_grado/screens/home/carrito_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/carrito_screen.dart';
 
 class CartWidget extends StatelessWidget {
   final int carritoCount;

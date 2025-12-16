@@ -49,7 +49,10 @@ class _AddProductoScreenState extends State<AddProductoScreen> {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.blueGrey.shade700),
+      labelStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        color: Colors.blueGrey.shade700,
+      ),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
@@ -66,101 +69,161 @@ class _AddProductoScreenState extends State<AddProductoScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue.shade600, Colors.blue.shade200],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [Colors.blue.shade700, Colors.blue.shade300],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-              elevation: 10,
-              shadowColor: Colors.black.withOpacity(0.3),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    children: [
-                      Text(
-                        "Añadir Nuevo Producto",
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 25),
-                      TextFormField(
-                        controller: _nombreController,
-                        decoration: _inputDecoration("Nombre"),
-                        validator: (v) => v!.isEmpty ? "Obligatorio" : null,
-                      ),
-                      const SizedBox(height: 15),
-                      TextFormField(
-                        controller: _categoriaController,
-                        decoration: _inputDecoration("Categoría"),
-                      ),
-                      const SizedBox(height: 15),
-                      TextFormField(
-                        controller: _descripcionController,
-                        decoration: _inputDecoration("Descripción"),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 15),
-                      TextFormField(
-                        controller: _imagenUrlController,
-                        decoration: _inputDecoration("URL de Imagen"),
-                      ),
-                      const SizedBox(height: 15),
-                      Row(
+            padding: const EdgeInsets.all(18),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Card(
+                  elevation: 14,
+                  shadowColor: Colors.blueAccent.withOpacity(0.35),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                    child: Form(
+                      key: _formKey,
+                      child: ListView(
+                        shrinkWrap: true,
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _precioController,
-                              decoration: _inputDecoration("Precio (€)"),
-                              keyboardType: TextInputType.number,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.shopping_bag,
+                                color: Colors.blue.shade700,
+                                size: 28,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                "Nuevo producto",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.blueGrey.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 6),
+                          Text(
+                            "Completa la información del producto",
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.blueGrey.shade500,
                             ),
                           ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _stockController,
-                              decoration: _inputDecoration("Stock"),
-                              keyboardType: TextInputType.number,
+
+                          const SizedBox(height: 28),
+
+                          TextFormField(
+                            controller: _nombreController,
+                            decoration: _inputDecoration(
+                              "Nombre",
+                            ).copyWith(prefixIcon: const Icon(Icons.label)),
+                            validator: (v) => v!.isEmpty ? "Obligatorio" : null,
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          TextFormField(
+                            controller: _categoriaController,
+                            decoration: _inputDecoration(
+                              "Categoría",
+                            ).copyWith(prefixIcon: const Icon(Icons.category)),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          TextFormField(
+                            controller: _descripcionController,
+                            maxLines: 3,
+                            decoration: _inputDecoration("Descripción")
+                                .copyWith(
+                                  prefixIcon: const Icon(Icons.description),
+                                ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          TextFormField(
+                            controller: _imagenUrlController,
+                            decoration: _inputDecoration(
+                              "URL de imagen",
+                            ).copyWith(prefixIcon: const Icon(Icons.image)),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _precioController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _inputDecoration("Precio (€)")
+                                      .copyWith(
+                                        prefixIcon: const Icon(
+                                          Icons.euro_rounded,
+                                        ),
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _stockController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _inputDecoration("Stock")
+                                      .copyWith(
+                                        prefixIcon: const Icon(
+                                          Icons.inventory_2,
+                                        ),
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          SizedBox(
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _guardarProducto,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade700,
+                                elevation: 10,
+                                shadowColor: Colors.blueAccent.withOpacity(
+                                  0.45,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                              ),
+                              child: Text(
+                                "Guardar producto",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 30),
-                      SizedBox(
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _guardarProducto,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade700,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            elevation: 8,
-                            shadowColor: Colors.black.withOpacity(0.3),
-                          ),
-                          child: Text(
-                            "Guardar Producto",
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
+                    ),
                   ),
                 ),
               ),

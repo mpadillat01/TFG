@@ -5,9 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:trabajo_fin_grado/screens/auth/login_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/new_appointments_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/new_appointments_screen.dart';
 
-import '../../services/firestore_service.dart';
+import '../../../services/firestore_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -215,9 +215,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
-  // -------------------------------------------------------
-  //       TARJETA GLASSMORPHISM DE CADA CITA
-  // -------------------------------------------------------
   Widget _buildCita(Map<String, dynamic> c) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),

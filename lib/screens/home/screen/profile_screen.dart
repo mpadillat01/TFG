@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:trabajo_fin_grado/screens/home/edit_profile_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/historial_citas_screen.dart';
-import 'package:trabajo_fin_grado/screens/home/historial_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/edit_profile_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/historial_citas_screen.dart';
+import 'package:trabajo_fin_grado/screens/home/screen/historial_screen.dart';
 import 'package:trabajo_fin_grado/widgets/navigation/bottom_nav.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -11,6 +11,17 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            "Sesión no válida",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -47,40 +58,62 @@ class ProfileScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.white.withOpacity(.8),
-                        Colors.white.withOpacity(.1),
+                        Colors.white.withOpacity(.9),
+                        Colors.white.withOpacity(.2),
                       ],
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(.25),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: CircleAvatar(
                     radius: 55,
-                    backgroundImage: user?.photoURL != null
-                        ? NetworkImage(user!.photoURL!)
-                        : const AssetImage("assets/images/default_avatar.png")
+                    backgroundImage: user.photoURL != null
+                        ? NetworkImage(user.photoURL!)
+                        : const AssetImage("assets/images/default.png")
                               as ImageProvider,
                   ),
                 ),
+
                 const SizedBox(height: 12),
 
                 Text(
-                  user?.displayName ?? "Paciente",
+                  user.displayName ?? "Paciente",
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 6),
+
+                const SizedBox(height: 4),
 
                 Text(
-                  user?.email ?? "-",
+                  user.email ?? "-",
                   style: TextStyle(
                     color: Colors.white.withOpacity(.85),
                     fontSize: 15,
                   ),
                 ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  "Paciente activo",
+                  style: TextStyle(
+                    color: Colors.greenAccent.shade200,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
                 const SizedBox(height: 30),
 
+                _sectionTitle("Cuenta"),
                 _glassCard(
                   child: Column(
                     children: [
@@ -96,7 +129,16 @@ class ProfileScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      _divider(),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                _sectionTitle("Historial"),
+                _glassCard(
+                  child: Column(
+                    children: [
                       _item(
                         icon: Icons.history_edu_outlined,
                         text: "Historial de citas",
@@ -111,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       _divider(),
                       _item(
-                        icon: Icons.history_edu_outlined,
+                        icon: Icons.shopping_bag_outlined,
                         text: "Historial de compras",
                         onTap: () {
                           Navigator.push(
@@ -121,18 +163,6 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           );
                         },
-                      ),
-                      _divider(),
-                      _item(
-                        icon: Icons.help_outline,
-                        text: "Centro de ayuda",
-                        onTap: () {},
-                      ),
-                      _divider(),
-                      _item(
-                        icon: Icons.privacy_tip_outlined,
-                        text: "Política de privacidad",
-                        onTap: () {},
                       ),
                     ],
                   ),
@@ -161,11 +191,15 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () async {
+                      final ok = await _confirmLogout(context);
+                      if (!ok) return;
+
                       await FirebaseAuth.instance.signOut();
                       if (!context.mounted) return;
+
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const BottomNav()),
-                        (route) => false,
+                        (_) => false,
                       );
                     },
                   ),
@@ -188,6 +222,23 @@ class ProfileScreen extends StatelessWidget {
         border: Border.all(color: Colors.white.withOpacity(.35)),
       ),
       child: child,
+    );
+  }
+
+  static Widget _sectionTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(.9),
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
+        ),
+      ),
     );
   }
 
@@ -217,5 +268,26 @@ class ProfileScreen extends StatelessWidget {
       indent: 12,
       endIndent: 12,
     );
+  }
+
+  static Future<bool> _confirmLogout(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Cerrar sesión"),
+        content: const Text("¿Seguro que quieres cerrar sesión?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancelar"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Salir"),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 }

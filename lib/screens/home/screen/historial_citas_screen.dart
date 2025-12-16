@@ -37,14 +37,31 @@ class HistorialCitasScreen extends StatelessWidget {
                 );
               }
 
-              final docs = snap.data!.docs
-                  .where((d) {
-                    final fecha = (d['date'] as Timestamp?)?.toDate();
-                    return fecha != null && fecha.isBefore(now);
-                  })
-                  .toList();
+              final docs = snap.data!.docs.where((d) {
+                final fecha = (d['date'] as Timestamp?)?.toDate();
+                final timeText = d['timeText'];
 
-              if (docs.isEmpty) return const _Empty(texto: "No tienes citas pasadas");
+                if (fecha == null || timeText == null) return false;
+
+                final parts = timeText.split(':');
+                if (parts.length != 2) return false;
+
+                final hour = int.tryParse(parts[0]) ?? 0;
+                final minute = int.tryParse(parts[1]) ?? 0;
+
+                final citaDateTime = DateTime(
+                  fecha.year,
+                  fecha.month,
+                  fecha.day,
+                  hour,
+                  minute,
+                );
+
+                return citaDateTime.isBefore(now);
+              }).toList();
+
+              if (docs.isEmpty)
+                return const _Empty(texto: "No tienes citas pasadas");
 
               docs.sort((a, b) {
                 final da = (a['date'] as Timestamp?)?.toDate() ?? now;
@@ -115,7 +132,10 @@ class HistorialCitasScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: color.withOpacity(.25),
                             border: Border.all(color: color.withOpacity(.45)),
