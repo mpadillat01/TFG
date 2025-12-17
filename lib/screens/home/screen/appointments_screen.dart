@@ -45,9 +45,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: const Color(0xFF0A4FF5),
-
       appBar: AppBar(
-        
         automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -62,7 +60,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         ),
         centerTitle: true,
       ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -74,65 +71,61 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                const SizedBox(height: 15),
-
-                Text(
-                  "Calendario de consultas",
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(.97),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+            child: SingleChildScrollView( 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 15),
+                  Text(
+                    "Calendario de consultas",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(.97),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 18),
-
-                _buildModernCalendar(),
-
-                const SizedBox(height: 28),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        fecha.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: .7,
+                  const SizedBox(height: 18),
+                  _buildModernCalendar(),
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          fecha.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: .7,
+                          ),
                         ),
                       ),
-                    ),
-
-                    ElevatedButton.icon(
-                      onPressed: _abrirNuevaCita,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF0A4FF5),
-                        elevation: 6,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                      ElevatedButton.icon(
+                        onPressed: _abrirNuevaCita,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0A4FF5),
+                          elevation: 6,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 12),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12),
+                        icon: const Icon(Icons.add, size: 22),
+                        label: const Text(
+                          "Nueva cita",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      icon: const Icon(Icons.add, size: 22),
-                      label: const Text(
-                        "Nueva cita",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-                Expanded(child: _buildListaCitas()),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildListaCitas(),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -157,7 +150,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             firstDate: DateTime(2023),
             lastDate: DateTime(2026),
             onDateChanged: (d) => setState(() => _selectedDate = d),
-            selectableDayPredicate: (_) => true,
           ),
         ),
       ),
@@ -169,26 +161,28 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snap) {
         final user = snap.data;
-        final stream = user == null 
-            ? fs.appointmentsAll() 
+        final stream = user == null
+            ? fs.appointmentsAll()
             : fs.appointmentsByDate(userId: user.uid);
 
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: stream,
           builder: (_, s) {
             if (s.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Colors.white));
+              return const Center(
+                  child: CircularProgressIndicator(color: Colors.white));
             }
 
             if (!s.hasData) {
-              return const Center(child: Text("No se pudieron cargar las citas"));
+              return const Center(
+                  child: Text("No se pudieron cargar las citas"));
             }
 
             final citas = s.data!.docs.where((d) {
               final fecha = (d['date'] as Timestamp).toDate();
               return fecha.year == _selectedDate.year &&
-                     fecha.month == _selectedDate.month &&
-                     fecha.day == _selectedDate.day;
+                  fecha.month == _selectedDate.month &&
+                  fecha.day == _selectedDate.day;
             }).toList();
 
             if (citas.isEmpty) {
@@ -205,9 +199,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             }
 
             return ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
               padding: const EdgeInsets.only(top: 6, bottom: 16),
               itemCount: citas.length,
-              itemBuilder: (_, i) => _buildCita(citas[i].data()),
+              itemBuilder: (_, i) =>
+                  _buildCita(citas[i].id, citas[i].data()),
             );
           },
         );
@@ -215,7 +212,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
-  Widget _buildCita(Map<String, dynamic> c) {
+  Widget _buildCita(String citaId, Map<String, dynamic> c) {
+    final user = FirebaseAuth.instance.currentUser;
+    final esPropia = user != null && c['userId'] == user.uid;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
       child: BackdropFilter(
@@ -244,7 +244,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     color: Color(0xFF0A4FF5), size: 30),
               ),
               const SizedBox(width: 16),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,9 +267,40 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   ],
                 ),
               ),
+              if (esPropia)
+                IconButton(
+                  icon: const Icon(Icons.cancel, color: Colors.white),
+                  onPressed: () => _confirmarCancelacion(citaId),
+                ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _confirmarCancelacion(String citaId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Cancelar cita"),
+        content: const Text(
+            "¿Seguro que quieres cancelar esta cita?\n\n"
+            "La hora quedará disponible para otros usuarios."),
+        actions: [
+          TextButton(
+            child: const Text("No"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Sí, cancelar"),
+            onPressed: () async {
+              Navigator.pop(context);
+              await fs.borrarCita(citaId);
+            },
+          ),
+        ],
       ),
     );
   }

@@ -14,6 +14,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _confirmPasswordCtrl = TextEditingController();
 
   bool _loading = false;
 
@@ -31,12 +32,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (_nameCtrl.text.isNotEmpty && _nameCtrl.text != user?.displayName) {
         await user!.updateDisplayName(_nameCtrl.text);
       }
+
       if (_emailCtrl.text.isNotEmpty && _emailCtrl.text != user?.email) {
         await user!.updateEmail(_emailCtrl.text);
       }
+
       if (_passwordCtrl.text.isNotEmpty) {
         if (_passwordCtrl.text.length < 6) {
           throw Exception("La contraseña debe tener al menos 6 caracteres");
+        }
+        if (_passwordCtrl.text != _confirmPasswordCtrl.text) {
+          throw Exception("Las contraseñas no coinciden");
         }
         await user!.updatePassword(_passwordCtrl.text);
       }
@@ -68,7 +74,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final isWide = width > 600; 
+    final isWide = width > 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D6EFD),
@@ -108,6 +114,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       _buildTextField(
                         _passwordCtrl,
                         "Nueva contraseña (opcional)",
+                        obscure: true,
+                      ),
+                      const SizedBox(height: 18),
+                      _buildTextField(
+                        _confirmPasswordCtrl,
+                        "Repetir nueva contraseña",
                         obscure: true,
                       ),
                     ],

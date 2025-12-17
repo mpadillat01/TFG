@@ -41,12 +41,15 @@ class MyAppointmentsScreen extends StatelessWidget {
                 );
               }
 
-              final docs = snap.data!.docs
-                  .where((d) {
-                    final fecha = (d['date'] as Timestamp?)?.toDate();
-                    return fecha != null && fecha.isAfter(now);
-                  })
-                  .toList();
+              final docs = snap.data!.docs.where((d) {
+                final fecha = (d['date'] as Timestamp?)?.toDate();
+                if (fecha == null) return false;
+
+                final today = DateTime(now.year, now.month, now.day);
+                final docDate = DateTime(fecha.year, fecha.month, fecha.day);
+
+                return docDate.isAtSameMomentAs(today) || docDate.isAfter(today);
+              }).toList();
 
               if (docs.isEmpty) return const _Empty(texto: "No tienes próximas citas");
 

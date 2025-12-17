@@ -24,6 +24,7 @@ class _CarritoSinSesion extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: BackButton(color: Colors.black),
+        automaticallyImplyLeading: false,
       ),
       extendBodyBehindAppBar: true,
       body: Container(
@@ -100,8 +101,7 @@ class _CarritoSinSesion extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       GestureDetector(
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/register'),
+                        onTap: () => Navigator.pushNamed(context, '/register'),
                         child: Text(
                           "¿No tienes cuenta? Regístrate",
                           style: TextStyle(
@@ -128,8 +128,9 @@ class _CarritoConSesion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final carritoRef =
-        FirebaseFirestore.instance.collection("carrito").doc(userId);
+    final carritoRef = FirebaseFirestore.instance
+        .collection("carrito")
+        .doc(userId);
 
     return Scaffold(
       appBar: AppBar(
@@ -264,19 +265,94 @@ class _CarritoConSesion extends StatelessWidget {
 }
 
 class _CarritoVacio extends StatelessWidget {
+  const _CarritoVacio({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.remove_shopping_cart, size: 80, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            "Tu carrito está vacío",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0D6EFD), Color(0xFF4EA8FF)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.remove_shopping_cart,
+                  size: 80,
+                  color: Colors.white.withOpacity(0.85),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              const Text(
+                "¡Vaya! Tu carrito está vacío",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Text(
+                "Explora nuestros productos y añade lo que más te guste.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withOpacity(0.85),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.storefront_rounded),
+                label: const Text(
+                  "Ir a la tienda",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue.shade700,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 6,
+                  shadowColor: Colors.black.withOpacity(0.3),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

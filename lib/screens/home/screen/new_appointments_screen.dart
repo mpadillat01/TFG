@@ -32,6 +32,37 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
 
   late AnimationController _fade;
 
+  final List<DateTime> _spanishHolidays = [
+    // 2025
+    DateTime(2025, 1, 1),
+    DateTime(2025, 1, 6),
+    DateTime(2025, 4, 18),
+    DateTime(2025, 5, 1),
+    DateTime(2025, 8, 15),
+    DateTime(2025, 10, 12),
+    DateTime(2025, 11, 1),
+    DateTime(2025, 12, 6),
+    DateTime(2025, 12, 8),
+    DateTime(2025, 12, 25),
+    // 2026
+    DateTime(2026, 1, 1),
+    DateTime(2026, 1, 6),
+    DateTime(2026, 3, 27),
+    DateTime(2026, 5, 1),
+    DateTime(2026, 8, 15),
+    DateTime(2026, 10, 12),
+    DateTime(2026, 11, 1),
+    DateTime(2026, 12, 6),
+    DateTime(2026, 12, 8),
+    DateTime(2026, 12, 25),
+  ];
+
+  bool _isHoliday(DateTime day) {
+    return _spanishHolidays.any(
+      (h) => h.year == day.year && h.month == day.month && h.day == day.day,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +97,9 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
     setState(() => _loadingHours = false);
   }
 
+  // ==============================
+  // Selector de fecha Web
+  // ==============================
   Future<void> _pickDateWebSafe() async {
     DateTime now = DateTime.now();
     DateTime temp = _date ?? now;
@@ -96,6 +130,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                   initialDate: temp,
                   firstDate: DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
+                  selectableDayPredicate: (day) => !_isHoliday(day),
                   onDateChanged: (d) => temp = d,
                 ),
                 actions: [
@@ -121,6 +156,9 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
     }
   }
 
+  // ==============================
+  // Selector de fecha móvil
+  // ==============================
   Future<void> _pickDate() async {
     if (kIsWeb) return _pickDateWebSafe();
 
@@ -130,6 +168,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      selectableDayPredicate: (day) => !_isHoliday(day),
     );
 
     if (picked != null) {
@@ -138,6 +177,9 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
     }
   }
 
+  // ==============================
+  // Selector de hora
+  // ==============================
   Future<void> _pickTime() async {
     if (_doctor == null || _date == null) {
       return _msg("Selecciona primero el doctor y la fecha");
@@ -175,58 +217,53 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
       backgroundColor: Colors.transparent,
       builder: (_) {
         Widget buildGrid(List<TimeOfDay> times) {
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: times.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 2.6,
+          return SizedBox(
+            height: 300, // o cualquier altura que se ajuste a tu modal
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics:
+                  const AlwaysScrollableScrollPhysics(), // deja que se pueda scroll si es necesario
+              itemCount: times.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.6,
+              ),
+              itemBuilder: (_, i) {
+                final t = times[i];
+                final text = t.format(context);
+
+                final isPast = false; // tu lógica aquí
+                final isBusy = false; // tu lógica aquí
+                final disabled = isPast || isBusy;
+
+                return AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: disabled ? 0.45 : 1,
+                  child: ElevatedButton(
+                    onPressed: disabled ? null : () {},
+                    style: ElevatedButton.styleFrom(
+                      elevation: 3,
+                      backgroundColor: disabled
+                          ? Colors.grey.shade300
+                          : Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      text,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-            itemBuilder: (_, i) {
-              final t = times[i];
-              final text = t.format(context);
-
-              final isPast =
-                  isToday &&
-                  DateTime(
-                    now.year,
-                    now.month,
-                    now.day,
-                    t.hour,
-                    t.minute,
-                  ).isBefore(now);
-
-              final isBusy = _busyHours.contains(text);
-              final disabled = isPast || isBusy;
-
-              return AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: disabled ? 0.45 : 1,
-                child: ElevatedButton(
-                  onPressed: disabled ? null : () => Navigator.pop(context, t),
-                  style: ElevatedButton.styleFrom(
-                    elevation: 3,
-                    backgroundColor: disabled
-                        ? Colors.grey.shade300
-                        : Colors.blue.shade600,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    text,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              );
-            },
           );
         }
 
@@ -240,53 +277,57 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen>
                 top: Radius.circular(26),
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(2),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight:
+                    MediaQuery.of(context).size.height *
+                    0.75, // no más del 75% de la pantalla
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                     ),
-                  ),
+                    const Text(
+                      "Selecciona una hora",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      "Mañana",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    buildGrid(timesMorning),
+                    const SizedBox(height: 18),
+                    const Text(
+                      "Tarde",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    buildGrid(timesAfternoon),
+                  ],
                 ),
-
-                const Text(
-                  "Selecciona una hora",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-
-                const SizedBox(height: 14),
-
-                const Text(
-                  "Mañana",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-                buildGrid(timesMorning),
-
-                const SizedBox(height: 18),
-
-                const Text(
-                  "Tarde",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-                buildGrid(timesAfternoon),
-              ],
+              ),
             ),
           ),
         );

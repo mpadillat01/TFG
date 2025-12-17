@@ -40,135 +40,139 @@ class ProfileScreen extends StatelessWidget {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0D6EFD), Color(0xFF4EA8FF)],
+            colors: [Color(0xFF4EA8FF), Color(0xFF0D6EFD)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Column(
               children: [
-                const SizedBox(height: 10),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 10),
 
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(.9),
-                        Colors.white.withOpacity(.2),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(.9),
+                                Colors.white.withOpacity(.2),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(.25),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 55,
+                            backgroundImage: user.photoURL != null
+                                ? NetworkImage(user.photoURL!)
+                                : const AssetImage("assets/images/default.png")
+                                      as ImageProvider,
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        Text(
+                          user.displayName ?? "Paciente",
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.email ?? "-",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(.85),
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Paciente activo",
+                          style: TextStyle(
+                            color: Colors.greenAccent.shade200,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        _sectionTitle("Cuenta"),
+                        _glassCard(
+                          child: Column(
+                            children: [
+                              _item(
+                                icon: Icons.person_outline,
+                                text: "Editar perfil",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const EditProfileScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        _sectionTitle("Historial"),
+                        _glassCard(
+                          child: Column(
+                            children: [
+                              _item(
+                                icon: Icons.history_edu_outlined,
+                                text: "Historial de citas",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const HistorialCitasScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _divider(),
+                              _item(
+                                icon: Icons.shopping_bag_outlined,
+                                text: "Historial de compras",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const HistorialScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                       ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(.25),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 55,
-                    backgroundImage: user.photoURL != null
-                        ? NetworkImage(user.photoURL!)
-                        : const AssetImage("assets/images/default.png")
-                              as ImageProvider,
                   ),
                 ),
-
-                const SizedBox(height: 12),
-
-                Text(
-                  user.displayName ?? "Paciente",
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-
-                const SizedBox(height: 4),
-
-                Text(
-                  user.email ?? "-",
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(.85),
-                    fontSize: 15,
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(
-                  "Paciente activo",
-                  style: TextStyle(
-                    color: Colors.greenAccent.shade200,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                _sectionTitle("Cuenta"),
-                _glassCard(
-                  child: Column(
-                    children: [
-                      _item(
-                        icon: Icons.person_outline,
-                        text: "Editar perfil",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const EditProfileScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                _sectionTitle("Historial"),
-                _glassCard(
-                  child: Column(
-                    children: [
-                      _item(
-                        icon: Icons.history_edu_outlined,
-                        text: "Historial de citas",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HistorialCitasScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _divider(),
-                      _item(
-                        icon: Icons.shopping_bag_outlined,
-                        text: "Historial de compras",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HistorialScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
 
                 SizedBox(
                   width: double.infinity,
@@ -180,7 +184,8 @@ class ProfileScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      elevation: 4,
+                      elevation: 6,
+                      shadowColor: Colors.black.withOpacity(0.25),
                     ),
                     icon: const Icon(Icons.logout),
                     label: const Text(
@@ -220,6 +225,13 @@ class ProfileScreen extends StatelessWidget {
         color: Colors.white.withOpacity(.18),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.white.withOpacity(.35)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: child,
     );
@@ -258,6 +270,9 @@ class ProfileScreen extends StatelessWidget {
       ),
       trailing: Icon(Icons.chevron_right, color: Colors.white.withOpacity(.7)),
       onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      tileColor: Colors.white.withOpacity(0.05),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
