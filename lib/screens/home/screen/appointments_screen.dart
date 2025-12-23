@@ -40,7 +40,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fecha = DateFormat("EEEE, d 'de' MMMM", "es_ES").format(_selectedDate);
+    final fecha =
+        DateFormat("EEEE, d 'de' MMMM", "es_ES").format(_selectedDate);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -60,75 +61,82 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         ),
         centerTitle: true,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0A4FF5), Color(0xFF50A9FF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SingleChildScrollView( 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 15),
-                  Text(
-                    "Calendario de consultas",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(.97),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  _buildModernCalendar(),
-                  const SizedBox(height: 28),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          fecha.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: .7,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _abrirNuevaCita,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF0A4FF5),
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 12),
-                        ),
-                        icon: const Icon(Icons.add, size: 22),
-                        label: const Text(
-                          "Nueva cita",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildListaCitas(),
-                  const SizedBox(height: 20),
-                ],
+
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Container(
+            height: constraints.maxHeight,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0A4FF5), Color(0xFF50A9FF)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
-          ),
-        ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 15),
+                      Text(
+                        "Calendario de consultas",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(.97),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      _buildModernCalendar(),
+                      const SizedBox(height: 28),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              fecha.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: .7,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: _abrirNuevaCita,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF0A4FF5),
+                              elevation: 6,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 12),
+                            ),
+                            icon: const Icon(Icons.add, size: 22),
+                            label: const Text(
+                              "Nueva cita",
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildListaCitas(),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -170,12 +178,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           builder: (_, s) {
             if (s.connectionState == ConnectionState.waiting) {
               return const Center(
-                  child: CircularProgressIndicator(color: Colors.white));
+                child: CircularProgressIndicator(color: Colors.white),
+              );
             }
 
             if (!s.hasData) {
               return const Center(
-                  child: Text("No se pudieron cargar las citas"));
+                child: Text("No se pudieron cargar las citas"),
+              );
             }
 
             final citas = s.data!.docs.where((d) {
@@ -240,8 +250,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               const CircleAvatar(
                 backgroundColor: Colors.white,
                 radius: 25,
-                child: Icon(Icons.medical_services_rounded,
-                    color: Color(0xFF0A4FF5), size: 30),
+                child: Icon(
+                  Icons.medical_services_rounded,
+                  color: Color(0xFF0A4FF5),
+                  size: 30,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -285,8 +298,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       builder: (_) => AlertDialog(
         title: const Text("Cancelar cita"),
         content: const Text(
-            "¿Seguro que quieres cancelar esta cita?\n\n"
-            "La hora quedará disponible para otros usuarios."),
+          "¿Seguro que quieres cancelar esta cita?\n\n"
+          "La hora quedará disponible para otros usuarios.",
+        ),
         actions: [
           TextButton(
             child: const Text("No"),
