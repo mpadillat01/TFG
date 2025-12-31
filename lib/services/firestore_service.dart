@@ -27,25 +27,18 @@ class FirestoreService {
     required String doctorName,
     required String motivo,
   }) async {
-    final start = DateTime(date.year, date.month, date.day);
-    final end = start.add(const Duration(days: 1));
+    final day = DateTime(date.year, date.month, date.day);
 
     final snap = await _db
         .collection('citas')
         .where('doctorId', isEqualTo: doctorId)
+        .where('day', isEqualTo: Timestamp.fromDate(day))
         .where('timeText', isEqualTo: timeText)
-        .where(
-          'date',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
-        )
-        .where(
-          'date',
-          isLessThan: Timestamp.fromDate(end),
-        )
         .get();
 
-    final ocupada = snap.docs.any((d) =>
-        d['status'] == 'pendiente' || d['status'] == 'activa');
+    final ocupada = snap.docs.any(
+      (d) => d['status'] == 'pendiente' || d['status'] == 'activa',
+    );
 
     if (ocupada) {
       throw Exception('Esa hora ya está ocupada');
@@ -56,6 +49,7 @@ class FirestoreService {
       'doctorId': doctorId,
       'doctorName': doctorName,
       'date': Timestamp.fromDate(date),
+      'day': Timestamp.fromDate(day),  
       'timeText': timeText,
       'motivo': motivo,
       'status': 'pendiente',
@@ -68,20 +62,12 @@ class FirestoreService {
     required DateTime date,
   }) async {
     try {
-      final start = DateTime(date.year, date.month, date.day);
-      final end = start.add(const Duration(days: 1));
+      final day = DateTime(date.year, date.month, date.day);
 
       final snap = await _db
           .collection('citas')
           .where('doctorId', isEqualTo: doctorId)
-          .where(
-            'date',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(start),
-          )
-          .where(
-            'date',
-            isLessThan: Timestamp.fromDate(end),
-          )
+          .where('day', isEqualTo: Timestamp.fromDate(day))
           .get();
 
       return snap.docs
