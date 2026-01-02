@@ -156,7 +156,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           child: CalendarDatePicker(
             initialDate: _selectedDate,
             firstDate: DateTime(2023),
-            lastDate: DateTime(2026),
+            lastDate: DateTime(2028),
             onDateChanged: (d) => setState(() => _selectedDate = d),
           ),
         ),
