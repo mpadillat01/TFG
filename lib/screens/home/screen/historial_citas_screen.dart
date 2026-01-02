@@ -37,9 +37,9 @@ class HistorialCitasScreen extends StatelessWidget {
                 );
               }
 
-              final docs = snap.data!.docs.where((d) {
-                final fecha = (d['date'] as Timestamp?)?.toDate();
-                final timeText = d['timeText'];
+              final docs = snap.data!.docs.where((doc) {
+                final fecha = (doc['date'] as Timestamp?)?.toDate();
+                final timeText = doc['timeText'];
 
                 if (fecha == null || timeText == null) return false;
 
@@ -60,8 +60,9 @@ class HistorialCitasScreen extends StatelessWidget {
                 return citaDateTime.isBefore(now);
               }).toList();
 
-              if (docs.isEmpty)
+              if (docs.isEmpty) {
                 return const _Empty(texto: "No tienes citas pasadas");
+              }
 
               docs.sort((a, b) {
                 final da = (a['date'] as Timestamp?)?.toDate() ?? now;
@@ -73,9 +74,32 @@ class HistorialCitasScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(18),
                 itemCount: docs.length,
                 itemBuilder: (_, i) {
-                  final d = docs[i].data();
+                  final doc = docs[i];
+                  final d = doc.data();
                   final fecha = (d['date'] as Timestamp?)?.toDate();
-                  final status = (d['status'] ?? 'pendiente').toString();
+                  final timeText = d['timeText'];
+                  String status = (d['status'] ?? 'pendiente').toString();
+
+                  // Construir DateTime completo
+                  final parts = timeText.split(':');
+                  final citaDateTime = DateTime(
+                    fecha!.year,
+                    fecha.month,
+                    fecha.day,
+                    int.parse(parts[0]),
+                    int.parse(parts[1]),
+                  );
+
+                  // ACTUALIZAR ESTADO EN FIRESTORE
+                  if (status == 'pendiente' &&
+                      citaDateTime.isBefore(DateTime.now())) {
+                    FirebaseFirestore.instance
+                        .collection('citas')
+                        .doc(doc.id)
+                        .update({'status': 'finalizada'});
+                    status = 'finalizada';
+                  }
+
                   final color = _statusColor(status);
 
                   return _GlassCard(
@@ -106,17 +130,16 @@ class HistorialCitasScreen extends StatelessWidget {
                                   fontSize: 16,
                                 ),
                               ),
-                              if (fecha != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    "${fecha.day}/${fecha.month}/${fecha.year}",
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(.85),
-                                      fontSize: 13,
-                                    ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  "${fecha.day}/${fecha.month}/${fecha.year}",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(.85),
+                                    fontSize: 13,
                                   ),
                                 ),
+                              ),
                               const SizedBox(height: 6),
                               Text(
                                 d['motivo'] ?? '',
@@ -171,6 +194,8 @@ Color _statusColor(String status) {
       return Colors.greenAccent.shade400;
     case "cancelada":
       return Colors.redAccent.shade400;
+    case "finalizada":
+      return Colors.blueAccent.shade400;
     default:
       return Colors.white;
   }

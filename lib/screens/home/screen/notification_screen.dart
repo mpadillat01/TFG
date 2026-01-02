@@ -130,7 +130,7 @@ class NotificationScreen extends StatelessWidget {
                       _deleteNotification(docId, tipo);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text("Notificación eliminada permanentemente."),
+                          content: Text("Notificación eliminada"),
                           backgroundColor: Colors.redAccent,
                         ),
                       );
