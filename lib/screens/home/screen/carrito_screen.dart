@@ -238,14 +238,32 @@ class _CarritoConSesion extends StatelessWidget {
                           ),
                         ),
                         onPressed: () async {
-                          await registrarCompra(productos, userId);
-                          await carritoRef.update({'productos': []});
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Compra realizada con éxito"),
-                            ),
-                          );
-                          Navigator.pop(context);
+                          try {
+                            await registrarCompra(productos, userId);
+
+                            await carritoRef.update({'productos': []});
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Compra realizada con éxito"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              Navigator.pop(context);
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "Error al procesar la compra: $e",
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
                         },
                         child: const Text(
                           "COMPRAR",
@@ -359,17 +377,29 @@ class _CarritoVacio extends StatelessWidget {
 }
 
 Future<void> registrarCompra(List productos, String userId) async {
-  final historialRef = FirebaseFirestore.instance.collection('historial');
+  final batch = FirebaseFirestore.instance.batch();
+  final historialRef = FirebaseFirestore.instance.collection('historial').doc();
 
-  final total = productos.fold<double>(
-    0,
-    (sum, p) => sum + (p['total'] as num).toDouble(),
-  );
+  double totalCompra = 0;
 
-  await historialRef.add({
+  for (var p in productos) {
+    totalCompra += (p['total'] as num).toDouble();
+
+    final productoRef = FirebaseFirestore.instance
+        .collection('productos')
+        .doc(p['productoId']);
+
+    batch.update(productoRef, {
+      'stock': FieldValue.increment(-(p['cantidad'] as int)),
+    });
+  }
+
+  batch.set(historialRef, {
     'usuarioId': userId,
     'fecha': Timestamp.now(),
     'productos': productos,
-    'totalCompra': total,
+    'totalCompra': totalCompra,
   });
+
+  await batch.commit();
 }

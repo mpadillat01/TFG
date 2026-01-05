@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +14,7 @@ class MarketScreen extends StatefulWidget {
 }
 
 class _MarketScreenState extends State<MarketScreen> {
-  Set<String> _carrito = {};
+  Set<String> _carritoIds = {};
 
   @override
   void initState() {
@@ -24,189 +26,240 @@ class _MarketScreenState extends State<MarketScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final doc = await FirebaseFirestore.instance
+    FirebaseFirestore.instance
         .collection('carrito')
         .doc(user.uid)
-        .get();
-    if (doc.exists) {
-      final productos = List<Map<String, dynamic>>.from(doc['productos'] ?? []);
-      setState(() {
-        _carrito = productos.map((p) => p['productoId'] as String).toSet();
-      });
-    }
+        .snapshots()
+        .listen((doc) {
+      if (doc.exists && mounted) {
+        final productos = List<Map<String, dynamic>>.from(doc['productos'] ?? []);
+        setState(() {
+          _carritoIds = productos.map((p) => p['productoId'] as String).toSet();
+        });
+      }
+    });
   }
 
   Future<void> _addToCart(String id, String nombre, double precio, int stock) async {
-    if (stock <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Producto agotado"), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Inicia sesión"),
-          content: const Text("Debes iniciar sesión para añadir productos al carrito."),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cerrar")),
-          ],
-        ),
-      );
-      return;
-    }
-
-    int cantidad = 1;
-
-    final result = await showDialog<int>(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            title: Text("Cantidad de $nombre"),
-            content: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    if (cantidad > 1) setState(() => cantidad--);
-                  },
-                  icon: const Icon(Icons.remove_circle_outline),
-                ),
-                Text(cantidad.toString(), style: const TextStyle(fontSize: 20)),
-                IconButton(
-                  onPressed: () {
-                    if (cantidad < stock) setState(() => cantidad++);
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
-              ElevatedButton(onPressed: () => Navigator.pop(context, cantidad), child: const Text("Añadir")),
-            ],
-          );
-        });
-      },
-    );
-
-    if (result == null) return;
-    cantidad = result;
+    if (user == null) { _showLoginDialog(); return; }
 
     final carritoRef = FirebaseFirestore.instance.collection("carrito").doc(user.uid);
     final doc = await carritoRef.get();
 
-    List<Map<String, dynamic>> productos = [];
-    if (doc.exists) {
-      productos = List<Map<String, dynamic>>.from(doc['productos'] ?? []);
+    List<Map<String, dynamic>> productosEnCarrito = doc.exists 
+        ? List<Map<String, dynamic>>.from(doc['productos'] ?? []) 
+        : [];
+
+    final index = productosEnCarrito.indexWhere((p) => p['productoId'] == id);
+    int cantidadYaEnCarrito = index >= 0 ? productosEnCarrito[index]['cantidad'] : 0;
+    int stockRealDisponible = stock - cantidadYaEnCarrito;
+
+    if (stockRealDisponible <= 0) {
+      _showCustomSnackBar("¡Stock agotado para este artículo!");
+      return;
     }
 
-    final index = productos.indexWhere((p) => p['productoId'] == id);
+    int? cantidad = await _mostrarDialogoCantidad(nombre, stockRealDisponible);
+    if (cantidad == null) return;
 
     if (index >= 0) {
-      int nuevaCantidad = productos[index]['cantidad'] + cantidad;
-      if (nuevaCantidad > stock) nuevaCantidad = stock;
-      productos[index]['cantidad'] = nuevaCantidad;
-      productos[index]['total'] = productos[index]['precio'] * nuevaCantidad;
+      productosEnCarrito[index]['cantidad'] += cantidad;
+      productosEnCarrito[index]['total'] = productosEnCarrito[index]['precio'] * productosEnCarrito[index]['cantidad'];
     } else {
-      productos.add({
-        'productoId': id,
-        'nombre': nombre,
-        'precio': precio,
-        'cantidad': cantidad,
-        'total': precio * cantidad,
+      productosEnCarrito.add({
+        'productoId': id, 'nombre': nombre, 'precio': precio, 'cantidad': cantidad, 'total': precio * cantidad,
       });
-      setState(() => _carrito.add(id));
     }
 
-    await carritoRef.set({
-      'usuarioId': user.uid,
-      'fecha': Timestamp.now(),
-      'productos': productos,
-    });
+    await carritoRef.set({'usuarioId': user.uid, 'fecha': Timestamp.now(), 'productos': productosEnCarrito});
+    _showCustomSnackBar("Añadido al carrito con éxito", isError: false);
+  }
+
+  void _showCustomSnackBar(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: isError ? Colors.redAccent : Colors.greenAccent.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(20),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text("Tienda", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-        centerTitle: true,
-        actions: [CartWidget(carritoCount: _carrito.length, carrito: _carrito)],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0D6EFD), Color(0xFF4EA8FF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0D6EFD), Color(0xFF1E3A8A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('productos').snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Colors.white));
-              }
-
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return _EmptyCart();
-              }
-
-              final productos = snapshot.data!.docs;
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  int crossAxisCount = constraints.maxWidth < 600 ? 2 : constraints.maxWidth < 900 ? 3 : 4;
-                  double childAspectRatio = constraints.maxWidth < 600 ? 0.65 : constraints.maxWidth < 900 ? 0.7 : 0.75;
-
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: productos.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: childAspectRatio,
+          
+          SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  floating: true,
+                  pinned: true,
+                  backgroundColor: Colors.transparent,
+                  expandedHeight: 80,
+                  flexibleSpace: ClipRRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(color: Colors.white.withOpacity(0.1)),
                     ),
-                    itemBuilder: (context, i) {
-                      final doc = productos[i];
-                      final data = doc.data() as Map<String, dynamic>;
-                      final id = doc.id;
-                      final enCarrito = _carrito.contains(id);
-                      final stock = data['stock'] ?? 0;
-                      final agotado = stock <= 0;
+                  ),
+                  centerTitle: true,
+                  title: const Text(
+                    "Marketplace",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: 1.2),
+                  ),
+                  actions: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: CartWidget(carritoCount: _carritoIds.length, carrito: _carritoIds),
+                    ),
+                  ],
+                ),
 
-                      return ProductoCard(
-                        id: id,
-                        nombre: data['nombre'],
-                        descripcion: data['descripcion'],
-                        precio: (data['precio'] as num).toDouble(),
-                        imagenUrl: data['imagenUrl'],
-                        enCarrito: enCarrito,
-                        agotado: agotado,
-                        onAdd: agotado
-                            ? null
-                            : () => _addToCart(
-                                  id,
-                                  data['nombre'],
-                                  (data['precio'] as num).toDouble(),
-                                  stock,
-                                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  sliver: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('productos').snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: Colors.white)));
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const SliverFillRemaining(child: _EmptyCart());
+                      }
+
+                      final productos = snapshot.data!.docs;
+                      
+                      return SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: _calculateColumns(context),
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.75,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) {
+                            final data = productos[i].data() as Map<String, dynamic>;
+                            final id = productos[i].id;
+                            final stock = data['stock'] ?? 0;
+
+                            return Hero(
+                              tag: 'prod_$id',
+                              child: ProductoCard(
+                                id: id,
+                                nombre: data['nombre'] ?? '',
+                                descripcion: data['descripcion'] ?? '',
+                                precio: (data['precio'] as num).toDouble(),
+                                imagenUrl: data['imagenUrl'] ?? '',
+                                enCarrito: _carritoIds.contains(id),
+                                agotado: stock <= 0,
+                                onAdd: () => _addToCart(id, data['nombre'], (data['precio'] as num).toDouble(), stock),
+                              ),
+                            );
+                          },
+                          childCount: productos.length,
+                        ),
                       );
                     },
-                  );
-                },
-              );
-            },
+                  ),
+                ),
+              ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  int _calculateColumns(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 5;
+    if (width > 900) return 4;
+    if (width > 600) return 3;
+    return 2;
+  }
+
+  void _showLoginDialog() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) => Container(),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Transform.scale(
+          scale: anim1.value,
+          child: Opacity(
+            opacity: anim1.value,
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              title: const Text("¡Hola! 👋", style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text("Necesitas una cuenta para empezar a llenar tu carrito."),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Vale, entiendo")),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<int?> _mostrarDialogoCantidad(String nombre, int stock) {
+    int localCant = 1;
+    return showDialog<int>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white.withOpacity(0.95),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+          title: Text("¿Cuántos te llevas?", style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(nombre, style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+              const SizedBox(height: 20),
+              Container(
+                decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(15)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(onPressed: () => setDialogState(() { if (localCant > 1) localCant--; }), icon: const Icon(Icons.remove)),
+                    Text("$localCant", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                    IconButton(onPressed: () => setDialogState(() { if (localCant < stock) localCant++; }), icon: const Icon(Icons.add)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text("Quedan $stock disponibles", style: const TextStyle(color: Colors.grey)),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D6EFD), shape: StadiumBorder()),
+              onPressed: () => Navigator.pop(context, localCant), 
+              child: const Text("¡Añadir!", style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
       ),
     );
@@ -214,149 +267,18 @@ class _MarketScreenState extends State<MarketScreen> {
 }
 
 class _EmptyCart extends StatelessWidget {
-  const _EmptyCart({super.key});
-
+  const _EmptyCart();
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF0D6EFD), Color(0xFF4EA8FF)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.white.withOpacity(0.4)),
+          const SizedBox(height: 16),
+          const Text("La tienda está vacía...", style: TextStyle(color: Colors.white70, fontSize: 18)),
+        ],
       ),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.shopping_cart_outlined, size: 100, color: Colors.white.withOpacity(0.8)),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                "¡Vaya! Tu carrito está vacío",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Añade tus productos favoritos y estarán aquí.",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 16, height: 1.4),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.storefront_rounded),
-                label: const Text("Ir a la tienda", style: TextStyle(fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue.shade700,
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 6,
-                  shadowColor: Colors.black.withOpacity(0.3),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-class ProductoCard extends StatelessWidget {
-  final String id;
-  final String nombre;
-  final String descripcion;
-  final double precio;
-  final String imagenUrl;
-  final bool enCarrito;
-  final bool agotado;
-  final VoidCallback? onAdd;
-
-  const ProductoCard({
-    super.key,
-    required this.id,
-    required this.nombre,
-    required this.descripcion,
-    required this.precio,
-    required this.imagenUrl,
-    required this.enCarrito,
-    this.agotado = false,
-    this.onAdd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: Image.network(imagenUrl, fit: BoxFit.cover, width: double.infinity),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text("\$${precio.toStringAsFixed(2)}"),
-                    const SizedBox(height: 4),
-                    ElevatedButton(
-                      onPressed: onAdd,
-                      child: Text(enCarrito ? "En carrito" : "Añadir"),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (agotado)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: Text(
-                  "AGOTADO",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }
