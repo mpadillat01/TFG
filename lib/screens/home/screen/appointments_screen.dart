@@ -20,6 +20,46 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   DateTime _selectedDate = DateTime.now();
   final fs = FirestoreService();
 
+  final List<DateTime> _spanishHolidays = [
+    DateTime(2025, 1, 1),
+    DateTime(2025, 1, 6),
+    DateTime(2025, 2, 16),
+    DateTime(2025, 4, 17),
+    DateTime(2025, 4, 18),
+    DateTime(2025, 5, 1),
+    DateTime(2025, 8, 15),
+    DateTime(2025, 10, 12),
+    DateTime(2025, 11, 1),
+    DateTime(2025, 12, 6),
+    DateTime(2025, 12, 8),
+    DateTime(2025, 12, 25),
+    DateTime(2026, 1, 1),
+    DateTime(2026, 1, 6),
+    DateTime(2026, 2, 17),
+    DateTime(2026, 4, 2),
+    DateTime(2026, 4, 3),
+    DateTime(2026, 5, 1),
+    DateTime(2026, 8, 15),
+    DateTime(2026, 9, 8),
+    DateTime(2026, 10, 12),
+    DateTime(2026, 11, 1),
+    DateTime(2026, 11, 2),
+    DateTime(2026, 12, 6),
+    DateTime(2026, 12, 7),
+    DateTime(2026, 12, 8),
+    DateTime(2026, 12, 25),
+  ];
+
+  DateTime _normalize(DateTime d) {
+    final local = d.toLocal();
+    return DateTime(local.year, local.month, local.day);
+  }
+
+  bool _isHoliday(DateTime day) {
+    final d = _normalize(day);
+    return _spanishHolidays.any((h) => _normalize(h).isAtSameMomentAs(d));
+  }
+
   Future<void> _abrirNuevaCita() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -40,8 +80,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fecha =
-        DateFormat("EEEE, d 'de' MMMM", "es_ES").format(_selectedDate);
+    final fecha = DateFormat(
+      "EEEE, d 'de' MMMM",
+      "es_ES",
+    ).format(_selectedDate);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -61,7 +103,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         ),
         centerTitle: true,
       ),
-
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Container(
@@ -115,14 +156,17 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 18, vertical: 12),
+                                horizontal: 18,
+                                vertical: 12,
+                              ),
                             ),
                             icon: const Icon(Icons.add, size: 22),
                             label: const Text(
                               "Nueva cita",
                               style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -157,7 +201,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             initialDate: _selectedDate,
             firstDate: DateTime(2023),
             lastDate: DateTime(2028),
-            onDateChanged: (d) => setState(() => _selectedDate = d),
+            selectableDayPredicate: (day) {
+              final d = _normalize(day);
+              if (d.weekday == DateTime.sunday) return false;
+              if (_isHoliday(d)) return false;
+              return true;
+            },
+            onDateChanged: (d) => setState(() => _selectedDate = _normalize(d)),
           ),
         ),
       ),
@@ -190,9 +240,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
             final citas = s.data!.docs.where((d) {
               final fecha = (d['date'] as Timestamp).toDate();
-              return fecha.year == _selectedDate.year &&
-                  fecha.month == _selectedDate.month &&
-                  fecha.day == _selectedDate.day;
+              final f = _normalize(fecha);
+              return f.year == _selectedDate.year &&
+                  f.month == _selectedDate.month &&
+                  f.day == _selectedDate.day;
             }).toList();
 
             if (citas.isEmpty) {
@@ -213,8 +264,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               shrinkWrap: true,
               padding: const EdgeInsets.only(top: 6, bottom: 16),
               itemCount: citas.length,
-              itemBuilder: (_, i) =>
-                  _buildCita(citas[i].id, citas[i].data()),
+              itemBuilder: (_, i) => _buildCita(citas[i].id, citas[i].data()),
             );
           },
         );
@@ -237,13 +287,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             color: Colors.white.withOpacity(.22),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: Colors.white.withOpacity(.35)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(.20),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              )
-            ],
           ),
           child: Row(
             children: [

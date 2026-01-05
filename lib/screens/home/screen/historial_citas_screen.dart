@@ -80,7 +80,6 @@ class HistorialCitasScreen extends StatelessWidget {
                   final timeText = d['timeText'];
                   String status = (d['status'] ?? 'pendiente').toString();
 
-                  // Construir DateTime completo
                   final parts = timeText.split(':');
                   final citaDateTime = DateTime(
                     fecha!.year,
@@ -89,8 +88,6 @@ class HistorialCitasScreen extends StatelessWidget {
                     int.parse(parts[0]),
                     int.parse(parts[1]),
                   );
-
-                  // ACTUALIZAR ESTADO EN FIRESTORE
                   if (status == 'pendiente' &&
                       citaDateTime.isBefore(DateTime.now())) {
                     FirebaseFirestore.instance
