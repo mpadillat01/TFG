@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:trabajo_fin_grado/screens/admin/admin_home_screen.dart';
-import 'package:trabajo_fin_grado/screens/admin/admin_product_screen.dart';
 
 class AddProductoScreen extends StatefulWidget {
   const AddProductoScreen({super.key});
