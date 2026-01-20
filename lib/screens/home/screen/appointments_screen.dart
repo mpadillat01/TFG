@@ -275,6 +275,21 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   Widget _buildCita(String citaId, Map<String, dynamic> c) {
     final user = FirebaseAuth.instance.currentUser;
     final esPropia = user != null && c['userId'] == user.uid;
+    final fechaCita = (c['date'] as Timestamp).toDate();
+
+    final partesHora = c['timeText'].split(':');
+    final hora = int.parse(partesHora[0]);
+    final minuto = int.parse(partesHora[1]);
+
+    final fechaHoraCita = DateTime(
+      fechaCita.year,
+      fechaCita.month,
+      fechaCita.day,
+      hora,
+      minuto,
+    );
+
+    final citaPasada = fechaHoraCita.isBefore(DateTime.now());
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
@@ -323,7 +338,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   ],
                 ),
               ),
-              if (esPropia)
+              if (esPropia && !citaPasada)
                 IconButton(
                   icon: const Icon(Icons.cancel, color: Colors.white),
                   onPressed: () => _confirmarCancelacion(citaId),
